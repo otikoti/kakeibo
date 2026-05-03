@@ -344,6 +344,10 @@ function queueSync() {
 }
 
 function fetchRemoteEntries(url) {
+  return jsonpRequest(url).then((data) => Array.isArray(data.entries) ? data.entries : []);
+}
+
+function jsonpRequest(url, params = {}) {
   return new Promise((resolve, reject) => {
     const callbackName = `ledgerSync${Date.now()}${Math.round(Math.random() * 100000)}`;
     const script = document.createElement("script");
@@ -360,10 +364,11 @@ function fetchRemoteEntries(url) {
 
     window[callbackName] = (data) => {
       cleanup();
-      resolve(Array.isArray(data.entries) ? data.entries : []);
+      resolve(data || {});
     };
 
     const remoteUrl = new URL(url);
+    Object.entries(params).forEach(([key, value]) => remoteUrl.searchParams.set(key, value));
     remoteUrl.searchParams.set("callback", callbackName);
     remoteUrl.searchParams.set("t", Date.now());
     script.onerror = () => {
@@ -376,44 +381,11 @@ function fetchRemoteEntries(url) {
 }
 
 async function pushEntries(url) {
-  const body = new URLSearchParams();
-  body.set("action", "replace");
-  body.set("payload", JSON.stringify({ entries }));
-  await postWithIframe(url, body);
-}
-
-function postWithIframe(url, body) {
-  return new Promise((resolve) => {
-    const frameName = `ledgerPost${Date.now()}${Math.round(Math.random() * 100000)}`;
-    const iframe = document.createElement("iframe");
-    const form = document.createElement("form");
-
-    iframe.name = frameName;
-    iframe.hidden = true;
-    form.hidden = true;
-    form.method = "POST";
-    form.action = url;
-    form.target = frameName;
-
-    for (const [name, value] of body.entries()) {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = name;
-      input.value = value;
-      form.append(input);
-    }
-
-    iframe.addEventListener("load", () => {
-      setTimeout(() => {
-        iframe.remove();
-        form.remove();
-        resolve();
-      }, 200);
-    });
-
-    document.body.append(iframe, form);
-    form.submit();
+  const data = await jsonpRequest(url, {
+    action: "replace",
+    payload: JSON.stringify({ entries })
   });
+  if (!data.ok) throw new Error("同期先に保存できませんでした");
 }
 
 async function syncNow(options = {}) {
