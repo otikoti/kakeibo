@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>家計簿</title>
+  <meta name="theme-color" content="#16784d">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>家計簿</h1>
+        <p id="monthLabel">今月の記録</p>
+      </div>
+      <button class="icon-button" id="exportButton" type="button" title="CSV出力" aria-label="CSV出力">
+        <span aria-hidden="true">↓</span>
+      </button>
+    </header>
+
+    <section class="summary" aria-label="合計">
+      <div>
+        <span>収入</span>
+        <strong id="incomeTotal">¥0</strong>
+      </div>
+      <div>
+        <span>支出</span>
+        <strong id="expenseTotal">¥0</strong>
+      </div>
+      <div>
+        <span>差額</span>
+        <strong id="balanceTotal">¥0</strong>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="入力">
+      <form id="entryForm">
+        <input type="hidden" id="entryId">
+
+        <div class="segmented" role="group" aria-label="入出金">
+          <label>
+            <input type="radio" name="type" value="expense" checked>
+            <span>支出</span>
+          </label>
+          <label>
+            <input type="radio" name="type" value="income">
+            <span>収入</span>
+          </label>
+        </div>
+
+        <label>
+          <span>日付</span>
+          <input id="date" type="date" required>
+        </label>
+
+        <label>
+          <span>銀行名</span>
+          <input id="bank" type="text" list="bankOptions" placeholder="〇〇銀行" autocomplete="organization">
+        </label>
+        <datalist id="bankOptions"></datalist>
+
+        <label>
+          <span>取引先名</span>
+          <input id="partner" type="text" list="partnerOptions" placeholder="スーパー、会社名など" required>
+        </label>
+        <datalist id="partnerOptions"></datalist>
+
+        <label>
+          <span>分類</span>
+          <select id="category">
+            <option>食費</option>
+            <option>日用品</option>
+            <option>交通</option>
+            <option>住居</option>
+            <option>通信</option>
+            <option>光熱費</option>
+            <option>医療</option>
+            <option>娯楽</option>
+            <option>給与</option>
+            <option>その他</option>
+          </select>
+        </label>
+
+        <label>
+          <span>金額</span>
+          <input id="amount" type="number" inputmode="numeric" min="1" step="1" placeholder="1000" required>
+        </label>
+
+        <label class="wide">
+          <span>メモ</span>
+          <input id="memo" type="text" placeholder="任意">
+        </label>
+
+        <div class="actions">
+          <button class="secondary" id="resetButton" type="button">クリア</button>
+          <button class="primary" type="submit">保存</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="toolbar" aria-label="絞り込み">
+      <label>
+        <span>月</span>
+        <input id="monthFilter" type="month">
+      </label>
+      <label>
+        <span>検索</span>
+        <input id="search" type="search" placeholder="銀行・取引先・分類">
+      </label>
+    </section>
+
+    <section class="tools" aria-label="データ操作">
+      <label class="file-button">
+        CSV取込
+        <input id="importFile" type="file" accept=".csv,text/csv">
+      </label>
+      <button class="danger" id="clearAllButton" type="button">全削除</button>
+    </section>
+
+    <section class="sync" aria-label="同期設定">
+      <div class="list-head">
+        <h2>同期</h2>
+        <span id="syncStatus">未設定</span>
+      </div>
+      <label>
+        <span>Google Apps Script URL</span>
+        <input id="syncUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+      </label>
+      <div class="actions">
+        <button class="secondary" id="saveSyncButton" type="button">設定保存</button>
+        <button class="primary" id="syncNowButton" type="button">今すぐ同期</button>
+      </div>
+    </section>
+
+    <section class="list" aria-label="明細">
+      <div class="list-head">
+        <h2>明細</h2>
+        <span id="entryCount">0件</span>
+      </div>
+      <div id="entries"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
