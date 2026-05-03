@@ -379,10 +379,40 @@ async function pushEntries(url) {
   const body = new URLSearchParams();
   body.set("action", "replace");
   body.set("payload", JSON.stringify({ entries }));
-  await fetch(url, {
-    method: "POST",
-    mode: "no-cors",
-    body
+  await postWithIframe(url, body);
+}
+
+function postWithIframe(url, body) {
+  return new Promise((resolve) => {
+    const frameName = `ledgerPost${Date.now()}${Math.round(Math.random() * 100000)}`;
+    const iframe = document.createElement("iframe");
+    const form = document.createElement("form");
+
+    iframe.name = frameName;
+    iframe.hidden = true;
+    form.hidden = true;
+    form.method = "POST";
+    form.action = url;
+    form.target = frameName;
+
+    for (const [name, value] of body.entries()) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.append(input);
+    }
+
+    iframe.addEventListener("load", () => {
+      setTimeout(() => {
+        iframe.remove();
+        form.remove();
+        resolve();
+      }, 200);
+    });
+
+    document.body.append(iframe, form);
+    form.submit();
   });
 }
 
@@ -399,6 +429,9 @@ async function syncNow(options = {}) {
     mergeEntries(remoteEntries);
     render();
     await pushEntries(url);
+    const confirmedEntries = await fetchRemoteEntries(url);
+    mergeEntries(confirmedEntries);
+    render();
     setSyncStatus(`同期済み ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`);
   } catch (error) {
     setSyncStatus(options.quiet ? "同期待ち" : "同期エラー");
