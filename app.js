@@ -193,6 +193,7 @@ function upsertEntry(event) {
   queueSync();
   resetForm();
   render();
+  setSyncStatus(loadSyncUrl() ? "保存済み・同期待ち" : "端末内に保存");
 }
 
 function editEntry(id) {
@@ -381,6 +382,8 @@ function jsonpRequest(url, params = {}) {
 }
 
 async function pushEntries(url) {
+  const activeCount = entries.filter((entry) => !entry.deleted).length;
+  setSyncStatus(`${activeCount}件を送信中...`);
   const data = await jsonpRequest(url, {
     action: "replace",
     payload: JSON.stringify({ entries })
@@ -396,7 +399,7 @@ async function syncNow(options = {}) {
   }
 
   try {
-    setSyncStatus("同期中...");
+    setSyncStatus("読み込み中...");
     const remoteEntries = await fetchRemoteEntries(url);
     mergeEntries(remoteEntries);
     render();
@@ -404,9 +407,10 @@ async function syncNow(options = {}) {
     const confirmedEntries = await fetchRemoteEntries(url);
     mergeEntries(confirmedEntries);
     render();
-    setSyncStatus(`同期済み ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`);
+    const activeCount = entries.filter((entry) => !entry.deleted).length;
+    setSyncStatus(`同期済み ${activeCount}件 ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`);
   } catch (error) {
-    setSyncStatus(options.quiet ? "同期待ち" : "同期エラー");
+    setSyncStatus(options.quiet ? `同期待ち: ${error.message}` : "同期エラー");
     if (!options.quiet) alert(error.message);
   }
 }
